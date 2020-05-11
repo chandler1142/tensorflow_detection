@@ -15,8 +15,8 @@ np.random.seed(2234)
 
 #%%
 print(tf.__version__)
-print(tf.config.list_physical_devices('GPU'))
-
+# print(tf.config.list_physical_devices('GPU'))
+print(tf.config.list_logical_devices())
 
 # %%
 import xml.etree.ElementTree as ET
@@ -63,7 +63,6 @@ def parse_annotation(img_dir, ann_dir, labels):
         imgs_info.append(img_info) #filename, width, height, box_info
         if boxes_counter > max_boxes:
             max_boxes = boxes_counter
-        print(boxes_counter)
 
     #[b, 40, 5]
     print(max_boxes)
@@ -77,7 +76,7 @@ def parse_annotation(img_dir, ann_dir, labels):
         boxes[i, :img_boxes.shape[0]] = img_boxes 
         imgs.append(img_info['filename'])
 
-        print(img_info['filename'], boxes[i, :5])
+        # print(img_info['filename'], boxes[i, :5])
     # imgs: list of image path
     # boxes: [b, 40, 5]
     return imgs, boxes
@@ -85,6 +84,28 @@ def parse_annotation(img_dir, ann_dir, labels):
 obj_names = ('sugarbeet', 'weed')
 imgs, boxes = parse_annotation('data/train/image', 'data/train/annotation', obj_names)
 
+print(len(imgs))
+print(boxes.shape)
 # %%
 
+def preprocess(img, img_boxes):
+    # img: string
+    # img_boxes: [40, 5]
+    x = tf.io.read_file(img)
+    x = tf.image.decode_png(x, channels=3)
+    x = tf.image.convert_image_dtype(x, tf.float32)
+
+    return x, img_boxes
+
+
+def get_dataset(img_dir, ann_dir, batchsz):
+    imgs, boxes = parse_annotation(img_dir, ann_dir, obj_names)
+    db = tf.data.Dataset.from_tensor_slices((imgs, boxes))
+    db = db.shuffle(1000).map(preprocess).batch(batchsz).repeat()
+    print('db images: ', len(imgs))
+
+    return db
+# %%
+train_db = get_dataset('data/train/image', 'data/train/annotation', 4)
+print(train_db)
 # %%

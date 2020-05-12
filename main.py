@@ -100,6 +100,7 @@ def preprocess(img, img_boxes):
 
 
 def get_dataset(img_dir, ann_dir, batchsz):
+    #boxes: [116, 40, 5]
     imgs, boxes = parse_annotation(img_dir, ann_dir, obj_names)
     db = tf.data.Dataset.from_tensor_slices((imgs, boxes))
     db = db.shuffle(1000).map(preprocess).batch(batchsz).repeat()
@@ -206,14 +207,14 @@ def augmentation_generator(yolo_dataset):
 aug_train_db = augmentation_generator(train_db)
 db_visualize(aug_train_db)
 
-# %%
+# %% 2
 IMGSZ = 512
 GRIDSZ = 16
 ANCHORS = [0.57273, 0.677385, 1.87446, 2.06253, 3.33843, 5.47434, 7.88282, 3.52778, 9.77052, 9.16828]
 ANCHORS_NUM = len(ANCHORS) // 2
 
 
-# %%
+# %% Per image
 def process_true_boxes(gt_boxes, anchors):
     # gt_boxes: [40, 5]
     # 512 // 16 =32
@@ -261,7 +262,7 @@ def process_true_boxes(gt_boxes, anchors):
     # [40, 5] => [16, 16, 5, 5]
 
     # matching_gt_box => [16, 16, 5, 5]
-    # detector_mask   => [16, 15, 5, 1]
+    # detector_mask   => [16, 16, 5, 1]
     # gt_boxes_grid   => [40, 5]
     return matching_gt_box, detector_mask, gt_boxes_grid
 
@@ -282,14 +283,16 @@ def ground_truth_generator(db):
             batch_matching_gt_box.append(matching_gt_box)
             batch_detector_mask.append(detector_mask)
             batch_gt_boxes_grid.append(gt_boxes_grid)
-
+        #[4, 16, 16, 5, 1], [b, 16, 16, 5, 5]
         detector_mask = tf.cast(np.array(batch_detector_mask), dtype=tf.float32)
         matching_gt_box = tf.cast(np.array(batch_matching_gt_box), dtype=tf.float32)
         gt_boxes_grid = tf.cast(np.array(batch_gt_boxes_grid), dtype=tf.float32)
-
+        #(b, 16, 16, 5)
         matching_classes = tf.cast(matching_gt_box[..., 4], dtype=tf.int32)
+        # [b, 16, 16, 5, 3]
         matching_classes_oh = tf.one_hot(matching_classes, depth=3)
-        # [b, 16, 16, 5, 2]
+        # x-y-w-h-conf-l1-l2
+        # [b, 16,16,5,2]
         matching_classes_oh = tf.cast(matching_classes_oh[..., 1:], dtype=tf.float32)
         # [b, 512, 512, 3]
         # [b, 16, 16, 5, 1]
@@ -305,8 +308,7 @@ def ground_truth_generator(db):
 train_gen = ground_truth_generator(aug_train_db)
 
 img, detector_mask, matching_gt_boxes, matching_classes_oh, gt_boxes_grid = next(train_gen)
-img, detector_mask, matching_gt_boxes, matching_classes_oh, gt_boxes_grid = img[0], detector_mask[0], matching_gt_boxes[
-    0], matching_classes_oh[0], gt_boxes_grid[0]
+img, detector_mask, matching_gt_boxes, matching_classes_oh, gt_boxes_grid = img[0], detector_mask[0], matching_gt_boxes[0], matching_classes_oh[0], gt_boxes_grid[0]
 
 fig, (ax1, ax2) = plt.subplots(2, figsize=(5, 10))
 ax1.imshow(img)

@@ -484,7 +484,7 @@ x = layers.Conv2D(5*7, (1,1), strides=(1,1), padding='same', name='conv_23')(x)
 
 output = layers.Reshape((GRIDSZ,GRIDSZ,5,7))(x)
 # create model
-model = keras.models.Model(input_image, output)
+model = tf.keras.models.Model(input_image, output)
 x = tf.random.normal((4,512,512,3))
 out = model(x)
 print('out:', out.shape)

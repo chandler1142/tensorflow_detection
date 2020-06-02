@@ -1,5 +1,6 @@
 # %%
 # 温馨提示：目标检测是非常非常复杂的任务，建议使用6GB以上的显卡运行！
+import glob
 import os
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -131,8 +132,8 @@ def get_dataset(img_dir, ann_dir, batchsz):
     return db
 
 
-# %%
-train_db = get_dataset('data/train/image', 'data/train/annotation', 10)
+# %%                                          
+train_db = get_dataset('data/train/image', 'data/train/annotation', 1)
 print(train_db)
 
 # %%
@@ -168,7 +169,8 @@ def db_visualize(db):
 
 
 # %%
-db_visualize(train_db)
+# db_visualize(train_db)
+
 
 # %%
 # 1.4 data augmentation
@@ -233,7 +235,7 @@ def augmentation_generator(yolo_dataset):
 
 # %%
 aug_train_db = augmentation_generator(train_db)
-db_visualize(aug_train_db)
+# db_visualize(aug_train_db)
 
 # %%
 IMGSZ = 512
@@ -280,7 +282,7 @@ def process_true_boxes(gt_boxes, anchors):
                 if iou > best_iou:  # best iou
                     best_anchor = j
                     best_iou = iou
-                    # found the best anchors
+            # found the best anchors
             if best_iou > 0:
                 x_coord = np.floor(x).astype(np.int32)
                 y_coord = np.floor(y).astype(np.int32)
@@ -774,7 +776,7 @@ loss, sub_loss = yolo_loss(tf.expand_dims(detector_mask, axis=0),
 
 # %%
 # 5.1 train
-val_db = get_dataset('data/val/image', 'data/val/annotation', 4)
+val_db = get_dataset('data/val/image', 'data/val/annotation', 1)
 val_gen = ground_truth_generator(val_db)
 
 
@@ -785,6 +787,7 @@ def train(epoches):
     for epoch in range(epoches):
 
         for step in range(1):
+            print(step)
             img, detector_mask, matching_true_boxes, matching_classes_oh, true_boxes = next(train_gen)
             with tf.GradientTape() as tape:
                 y_pred = model(img, training=True)
@@ -798,65 +801,8 @@ def train(epoches):
 
 
 # %%
-train(1)
-# model.save_weights('weights/epoch10.ckpt')
-model.save('weights/test')
-
-
-##################################################################################################
-import cv2
-
-def image_preporcess(image, target_size, gt_boxes=None):
-
-    ih, iw    = target_size
-    h,  w, _  = image.shape
-
-    scale = min(iw/w, ih/h)
-    nw, nh  = int(scale * w), int(scale * h)
-    image_resized = cv2.resize(image, (nw, nh))
-
-    image_paded = np.full(shape=[ih, iw, 3], fill_value=128.0)
-    dw, dh = (iw - nw) // 2, (ih-nh) // 2
-    image_paded[dh:nh+dh, dw:nw+dw, :] = image_resized
-    image_paded = image_paded / 255.
-
-    if gt_boxes is None:
-        return image_paded
-
-    else:
-        gt_boxes[:, [0, 2]] = gt_boxes[:, [0, 2]] * scale + dw
-        gt_boxes[:, [1, 3]] = gt_boxes[:, [1, 3]] * scale + dh
-        return image_paded, gt_boxes
-
-
-def representative_data_gen():
-    imgs, boxes = parse_annotation('data/train/image', 'data/train/annotation', obj_names)
-
-    for input_value in range(100):
-        original_image = cv2.imread(imgs[input_value])
-        original_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
-        image_data = image_preporcess(np.copy(original_image), [416, 416])
-        img_in = image_data[np.newaxis, ...].astype(np.float32)
-        print("input_value: " + input_value)
-        yield [img_in]
-
-
-model.load_weights('weights/ckpt.h5')
-
-converter = tf.lite.TFLiteConverter.from_keras_model(model)
-converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-converter.optimizations = [tf.lite.Optimize.DEFAULT]
-converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS, tf.lite.OpsSet.SELECT_TF_OPS]
-converter.allow_custom_ops = False
-converter.representative_dataset = representative_data_gen
-
-tflite_model = converter.convert()
-file = open('./weights/test.tflite', 'wb')
-file.write(tflite_model)
-
-#####################################################################################################
-
-
+train(10)
+model.save_weights('weights/epoch10.ckpt')
 # coordinate loss
 # batch size
 # val float32
@@ -869,96 +815,96 @@ file.write(tflite_model)
 # %%
 # model.load_weights('weights/ckpt.h5')
 
-# import cv2
-#
-#
-# # 5.2
-# def visualize_result(img, model):
-#     # [512,512,3] 0~255, BGR
-#     img = cv2.imread(img)
-#     img = img[..., ::-1] / 255.
-#     img = tf.cast(img, dtype=tf.float32)
-#     # [1,512,512,3]
-#     img = tf.expand_dims(img, axis=0)
-#     # [1,16,16,5,7]
-#     y_pred = model(img, training=False)
-#
-#     x_grid = tf.tile(tf.range(GRIDSZ), [GRIDSZ])
-#     # [1, 16,16,1,1]
-#     x_grid = tf.reshape(x_grid, (1, GRIDSZ, GRIDSZ, 1, 1))
-#     x_grid = tf.cast(x_grid, dtype=tf.float32)
-#     y_grid = tf.transpose(x_grid, (0, 2, 1, 3, 4))
-#     xy_grid = tf.concat([x_grid, y_grid], axis=-1)
-#     # [1, 16, 16, 5, 2]
-#     xy_grid = tf.tile(xy_grid, [1, 1, 1, 5, 1])
-#
-#     anchors = np.array(ANCHORS).reshape(5, 2)
-#     pred_xy = tf.sigmoid(y_pred[..., 0:2])
-#     pred_xy = pred_xy + xy_grid
-#     # normalize 0~1
-#     pred_xy = pred_xy / tf.constant([16., 16.])
-#
-#     pred_wh = tf.exp(y_pred[..., 2:4])
-#     pred_wh = pred_wh * anchors
-#     pred_wh = pred_wh / tf.constant([16., 16.])
-#
-#     # [1,16,16,5,1]
-#     pred_conf = tf.sigmoid(y_pred[..., 4:5])
-#     # l1 l2
-#     pred_prob = tf.nn.softmax(y_pred[..., 5:])
-#
-#     pred_xy, pred_wh, pred_conf, pred_prob = \
-#         pred_xy[0], pred_wh[0], pred_conf[0], pred_prob[0]
-#
-#     boxes_xymin = pred_xy - 0.5 * pred_wh
-#     boxes_xymax = pred_xy + 0.5 * pred_wh
-#     # [16,16,5,2+2]
-#     boxes = tf.concat((boxes_xymin, boxes_xymax), axis=-1)
-#     # [16,16,5,2]
-#     box_score = pred_conf * pred_prob
-#     # [16,16,5]
-#     box_class = tf.argmax(box_score, axis=-1)
-#     # [16,16,5]
-#     box_class_score = tf.reduce_max(box_score, axis=-1)
-#     # [16,16,5]
-#     pred_mask = box_class_score > 0.45
-#     # [16,16,5,4]=> [N,4]
-#     boxes = tf.boolean_mask(boxes, pred_mask)
-#     # [16,16,5] => [N]
-#     scores = tf.boolean_mask(box_class_score, pred_mask)
-#     # 【16,16，5】=> [N]
-#     classes = tf.boolean_mask(box_class, pred_mask)
-#
-#     boxes = boxes * 512.
-#     # [N] => [n]
-#     select_idx = tf.image.non_max_suppression(boxes, scores, 40, iou_threshold=0.3)
-#     boxes = tf.gather(boxes, select_idx)
-#     scores = tf.gather(scores, select_idx)
-#     classes = tf.gather(classes, select_idx)
-#
-#     # plot
-#     fig, ax = plt.subplots(1, figsize=(10, 10))
-#     ax.imshow(img[0])
-#     n_boxes = boxes.shape[0]
-#     ax.set_title('boxes:%d' % n_boxes)
-#     for i in range(n_boxes):
-#         x1, y1, x2, y2 = boxes[i]
-#         w = x2 - x1
-#         h = y2 - y1
-#         label = classes[i].numpy()
-#
-#         if label == 0:  # sugarweet
-#             color = (0, 1, 0)
-#         else:
-#             color = (1, 0, 0)
-#
-#         rect = patches.Rectangle((x1.numpy(), y1.numpy()), w.numpy(), h.numpy(), linewidth=3, edgecolor=color,
-#                                  facecolor='none')
-#         ax.add_patch(rect)
-#
-#
-# # %%
-# files = glob.glob('data/val/image/*.png')
-# for x in files:
-#     visualize_result(x, model)
-# plt.show()
+import cv2
+
+
+# 5.2
+def visualize_result(img, model):
+    # [512,512,3] 0~255, BGR
+    img = cv2.imread(img)
+    img = img[..., ::-1] / 255.
+    img = tf.cast(img, dtype=tf.float32)
+    # [1,512,512,3]
+    img = tf.expand_dims(img, axis=0)
+    # [1,16,16,5,7]
+    y_pred = model(img, training=False)
+
+    x_grid = tf.tile(tf.range(GRIDSZ), [GRIDSZ])
+    # [1, 16,16,1,1]
+    x_grid = tf.reshape(x_grid, (1, GRIDSZ, GRIDSZ, 1, 1))
+    x_grid = tf.cast(x_grid, dtype=tf.float32)
+    y_grid = tf.transpose(x_grid, (0, 2, 1, 3, 4))
+    xy_grid = tf.concat([x_grid, y_grid], axis=-1)
+    # [1, 16, 16, 5, 2]
+    xy_grid = tf.tile(xy_grid, [1, 1, 1, 5, 1])
+
+    anchors = np.array(ANCHORS).reshape(5, 2)
+    pred_xy = tf.sigmoid(y_pred[..., 0:2])
+    pred_xy = pred_xy + xy_grid
+    # normalize 0~1
+    pred_xy = pred_xy / tf.constant([16., 16.])
+
+    pred_wh = tf.exp(y_pred[..., 2:4])
+    pred_wh = pred_wh * anchors
+    pred_wh = pred_wh / tf.constant([16., 16.])
+
+    # [1,16,16,5,1]
+    pred_conf = tf.sigmoid(y_pred[..., 4:5])
+    # l1 l2
+    pred_prob = tf.nn.softmax(y_pred[..., 5:])
+
+    pred_xy, pred_wh, pred_conf, pred_prob = \
+        pred_xy[0], pred_wh[0], pred_conf[0], pred_prob[0]
+
+    boxes_xymin = pred_xy - 0.5 * pred_wh
+    boxes_xymax = pred_xy + 0.5 * pred_wh
+    # [16,16,5,2+2]
+    boxes = tf.concat((boxes_xymin, boxes_xymax), axis=-1)
+    # [16,16,5,2]
+    box_score = pred_conf * pred_prob
+    # [16,16,5]
+    box_class = tf.argmax(box_score, axis=-1)
+    # [16,16,5]
+    box_class_score = tf.reduce_max(box_score, axis=-1)
+    # [16,16,5]
+    pred_mask = box_class_score > 0.45
+    # [16,16,5,4]=> [N,4]
+    boxes = tf.boolean_mask(boxes, pred_mask)
+    # [16,16,5] => [N]
+    scores = tf.boolean_mask(box_class_score, pred_mask)
+    # 【16,16，5】=> [N]
+    classes = tf.boolean_mask(box_class, pred_mask)
+
+    boxes = boxes * 512.
+    # [N] => [n]
+    select_idx = tf.image.non_max_suppression(boxes, scores, 40, iou_threshold=0.3)
+    boxes = tf.gather(boxes, select_idx)
+    scores = tf.gather(scores, select_idx)
+    classes = tf.gather(classes, select_idx)
+
+    # plot
+    fig, ax = plt.subplots(1, figsize=(10, 10))
+    ax.imshow(img[0])
+    n_boxes = boxes.shape[0]
+    ax.set_title('boxes:%d' % n_boxes)
+    for i in range(n_boxes):
+        x1, y1, x2, y2 = boxes[i]
+        w = x2 - x1
+        h = y2 - y1
+        label = classes[i].numpy()
+
+        if label == 0:  # sugarweet
+            color = (0, 1, 0)
+        else:
+            color = (1, 0, 0)
+
+        rect = patches.Rectangle((x1.numpy(), y1.numpy()), w.numpy(), h.numpy(), linewidth=3, edgecolor=color,
+                                 facecolor='none')
+        ax.add_patch(rect)
+
+
+# %%
+files = glob.glob('data/val/image/*.png')
+for x in files:
+    visualize_result(x, model)
+plt.show()

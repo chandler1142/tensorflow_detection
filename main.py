@@ -13,7 +13,6 @@ np.random.seed(2234)
 # %%
 print(tf.__version__)
 print(tf.config.list_physical_devices('GPU'))
-print(tf.config.is_gpu_available())
 
 
 # %%
@@ -84,6 +83,7 @@ imgs, boxes = parse_annotation(
     'data/train/image', 'data/train/annotation', obj_names)
 
 print(len(imgs))
+#[116, 40, 5]
 print(boxes.shape)
 
 
@@ -158,7 +158,8 @@ def augmentation_generator(yolo_dataset):
     
     Returns
     -------
-    - augmented batch : tensor (shape : batch_size, IMAGE_W, IMAGE_H, 3)
+    - augmented
+        batch : tensor (shape : batch_size, IMAGE_W, IMAGE_H, 3)
         batch : tupple(images, annotations)
         batch[0] : images : tensor (shape : batch_size, IMAGE_W, IMAGE_H, 3)
         batch[1] : annotations : tensor (shape : batch_size, max annot, 5)
@@ -209,6 +210,7 @@ db_visualize(aug_train_db)
 
 # %% 2
 IMGSZ = 512
+# 16???
 GRIDSZ = 16
 ANCHORS = [0.57273, 0.677385, 1.87446, 2.06253, 3.33843, 5.47434, 7.88282, 3.52778, 9.77052, 9.16828]
 ANCHORS_NUM = len(ANCHORS) // 2
@@ -306,7 +308,7 @@ def ground_truth_generator(db):
 # 2.3 visualize object mask
 # train_db => aug_train_db => train_gen
 train_gen = ground_truth_generator(aug_train_db)
-
+#img: [4, 512, 512, 3],
 img, detector_mask, matching_gt_boxes, matching_classes_oh, gt_boxes_grid = next(train_gen)
 img, detector_mask, matching_gt_boxes, matching_classes_oh, gt_boxes_grid = img[0], detector_mask[0], matching_gt_boxes[
     0], matching_classes_oh[0], gt_boxes_grid[0]

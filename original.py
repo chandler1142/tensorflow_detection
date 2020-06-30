@@ -1,7 +1,6 @@
 # %%
 # 温馨提示：目标检测是非常非常复杂的任务，建议使用6GB以上的显卡运行！
-import glob
-import os
+import os, glob
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import numpy as np
@@ -132,8 +131,8 @@ def get_dataset(img_dir, ann_dir, batchsz):
     return db
 
 
-# %%                                          
-train_db = get_dataset('data/train/image', 'data/train/annotation', 1)
+# %%
+train_db = get_dataset('data/train/image', 'data/train/annotation', 10)
 print(train_db)
 
 # %%
@@ -169,8 +168,7 @@ def db_visualize(db):
 
 
 # %%
-# db_visualize(train_db)
-
+db_visualize(train_db)
 
 # %%
 # 1.4 data augmentation
@@ -235,7 +233,7 @@ def augmentation_generator(yolo_dataset):
 
 # %%
 aug_train_db = augmentation_generator(train_db)
-# db_visualize(aug_train_db)
+db_visualize(aug_train_db)
 
 # %%
 IMGSZ = 512
@@ -282,7 +280,7 @@ def process_true_boxes(gt_boxes, anchors):
                 if iou > best_iou:  # best iou
                     best_anchor = j
                     best_iou = iou
-            # found the best anchors
+                    # found the best anchors
             if best_iou > 0:
                 x_coord = np.floor(x).astype(np.int32)
                 y_coord = np.floor(y).astype(np.int32)
@@ -776,7 +774,7 @@ loss, sub_loss = yolo_loss(tf.expand_dims(detector_mask, axis=0),
 
 # %%
 # 5.1 train
-val_db = get_dataset('data/val/image', 'data/val/annotation', 1)
+val_db = get_dataset('data/val/image', 'data/val/annotation', 4)
 val_gen = ground_truth_generator(val_db)
 
 
@@ -786,8 +784,7 @@ def train(epoches):
 
     for epoch in range(epoches):
 
-        for step in range(1):
-            print(step)
+        for step in range(30):
             img, detector_mask, matching_true_boxes, matching_classes_oh, true_boxes = next(train_gen)
             with tf.GradientTape() as tape:
                 y_pred = model(img, training=True)
@@ -908,3 +905,6 @@ files = glob.glob('data/val/image/*.png')
 for x in files:
     visualize_result(x, model)
 plt.show()
+
+
+

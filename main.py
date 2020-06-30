@@ -83,7 +83,7 @@ imgs, boxes = parse_annotation(
     'data/train/image', 'data/train/annotation', obj_names)
 
 print(len(imgs))
-#[116, 40, 5]
+# [116, 40, 5]
 print(boxes.shape)
 
 
@@ -308,7 +308,7 @@ def ground_truth_generator(db):
 # 2.3 visualize object mask
 # train_db => aug_train_db => train_gen
 train_gen = ground_truth_generator(aug_train_db)
-#img: [4, 512, 512, 3],
+# img: [4, 512, 512, 3],
 img, detector_mask, matching_gt_boxes, matching_classes_oh, gt_boxes_grid = next(train_gen)
 img, detector_mask, matching_gt_boxes, matching_classes_oh, gt_boxes_grid = img[0], detector_mask[0], matching_gt_boxes[
     0], matching_classes_oh[0], gt_boxes_grid[0]

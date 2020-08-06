@@ -12,7 +12,7 @@ np.random.seed(2234)
 
 # %%
 print(tf.__version__)
-print(tf.config.list_physical_devices('GPU'))
+print(tf.test.is_gpu_available())
 
 
 # %%

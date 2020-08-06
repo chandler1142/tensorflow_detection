@@ -98,6 +98,8 @@ def parse_annotation(img_dir, ann_dir, labels):
         # print(img_info['filename'], boxes[i,:5])
     # imgs: list of image path
     # boxes: [b,40,5]
+    print(imgs[0])
+    print(boxes[0].shape)
     return imgs, boxes
 
 
@@ -122,8 +124,9 @@ def preprocess(img, img_boxes):
 def get_dataset(img_dir, ann_dir, batchsz):
     # return tf dataset
     # [b], boxes [b, 40, 5]
-    imgs, boxes = parse_annotation(img_dir, ann_dir, obj_names)
-    db = tf.data.Dataset.from_tensor_slices((imgs, boxes))
+    # imgs, boxes = parse_annotation(img_dir, ann_dir, obj_names)
+    # db = tf.data.Dataset.from_tensor_slices((imgs, boxes))
+    db = tf.data.TFRecordDataset("D:\\数据集\\手\\train.record")
     db = db.shuffle(1000).map(preprocess).batch(batchsz).repeat()
 
     print('db Images:', len(imgs))

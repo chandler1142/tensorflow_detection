@@ -84,14 +84,14 @@ def main(args=None):
             cls_list, bbox_list, anno_list = read_annotation(image_path, anno_list)
             print("%s Done!" % image_path)
 
-        with open(csv_path, "w") as f:
+        with open(csv_path, "w", newline='') as f:
             writer = csv.writer(f)
             for row in anno_list:
                 writer.writerow(row)
 
     class_csv_path = os.path.join(data_dir, "class.csv")
 
-    with open(class_csv_path, "w") as f:
+    with open(class_csv_path, "w", newline='') as f:
         writer = csv.writer(f)
         for k, v in class_dict.items():
             writer.writerow([k, str(v)])

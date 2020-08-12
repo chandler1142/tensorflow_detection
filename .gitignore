@@ -5,3 +5,4 @@ weights/
 *.weights
 
 tensorflow2/chapter3-retinanet/keras-retinanet
+tensorflow2/chapter3-retinanet/models

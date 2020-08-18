@@ -42,14 +42,16 @@ class MyRNN(tf.keras.Model):
     def __init__(self, units):
         super(MyRNN, self).__init__()
 
+        # [b, 64]
+        self.state0 = [tf.zeros([batchsz, units]), tf.zeros([batchsz, units])]
+        self.state1 = [tf.zeros([batchsz, units]), tf.zeros([batchsz, units])]
+
         # 词向量编码 [b, 80] => [b, 80, 100]
         self.embedding = tf.keras.layers.Embedding(total_words, embedding_len, input_length=max_review_len)
-        # 构建两个cell
-        self.rnn = tf.keras.Sequential([
-            tf.keras.layers.SimpleRNN(units, return_sequences=True),
-            tf.keras.layers.SimpleRNN(units)
-        ])
 
+        # 构建两个cell
+        self.rnn_cell0 = tf.keras.layers.LSTMCell(units, dropout=0.5)
+        self.rnn_cell1 = tf.keras.layers.LSTMCell(units, dropout=0.5)
         # [b, 80, 100] => [b, 64] => [b, 1]
         self.outlayer = tf.keras.layers.Dense(1)
 
@@ -58,8 +60,16 @@ class MyRNN(tf.keras.Model):
         x = inputs
         # [b, 80] => [b, 80, 100]
         x = self.embedding(x)
-        x = self.rnn(x)
-        x = self.outlayer(x)
+
+        state0 = self.state0
+        state1 = self.state1
+
+        # word: [b, 100]
+        for word in tf.unstack(x, axis=1):
+            out0, state0 = self.rnn_cell0(word, state0, training)
+            out1, state1 = self.rnn_cell0(word, state1, training)
+
+        x = self.outlayer(out1)
         prob = tf.sigmoid(x)
 
         return prob

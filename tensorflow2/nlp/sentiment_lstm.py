@@ -10,6 +10,7 @@ from keras.layers.core import Dense, Dropout, Activation
 from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM
 from keras.models import Sequential
+from keras.models import model_from_yaml
 from keras.preprocessing import sequence
 from sklearn.model_selection import train_test_split
 
@@ -151,9 +152,51 @@ def train():
     train_lstm(n_symbols, embedding_weights, x_train, y_train, x_test, y_test)
 
 
-def main():
-    train()
+def input_transform(string):
+    words = jieba.lcut(string)
+    words = np.array(words).reshape(1, -1)
+    model = Word2Vec.load('data/lstm_data/Word2vec_model.pkl')
+    _, _, combined = create_dictionaries(model, words)
+    return combined
 
+
+def lstm_predict(string):
+    print('loading model......')
+    with open('data/lstm_data/lstm.yml', 'r') as f:
+        yaml_string = yaml.load(f)
+    model = model_from_yaml(yaml_string)
+
+    print('loading weights......')
+    model.load_weights('data/lstm_data/lstm.h5')
+    model.compile(loss='binary_crossentropy',
+                  optimizer='adam', metrics=['accuracy'])
+    data = input_transform(string)
+    data.reshape(1, -1)
+    result = model.predict_classes(data)
+    if result[0][0] == 1:
+        print(string, 'positive')
+    else:
+        print(string, ' negative')
+
+
+def main():
+    # train()
+    string = '牛逼的手机，从3米高的地方摔下去都没坏，质量非常好'
+    lstm_predict(string)
+    string = '酒店的环境非常好，价格也便宜，值得推荐'
+    lstm_predict(string)
+    string = '手机质量太差了，傻逼店家，赚黑心钱，以后再也不会买了'
+    lstm_predict(string)
+    string = '我是傻逼'
+    lstm_predict(string)
+    string = '你是傻逼'
+    lstm_predict(string)
+    string = '屏幕较差，拍照也很粗糙。'
+    lstm_predict(string)
+    string = '质量不错，是正品 ，安装师傅也很好，才要了83元材料费'
+    lstm_predict(string)
+    string = '东西非常不错，安装师傅很负责人，装的也很漂亮，精致，谢谢安装师傅！'
+    lstm_predict(string)
 
 
 if __name__ == '__main__':

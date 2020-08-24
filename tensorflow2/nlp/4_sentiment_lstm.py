@@ -59,7 +59,7 @@ def create_dictionaries(model=None,
         gensim_dict.doc2bow(model.wv.vocab.keys(),
                             allow_update=True)
         w2indx = {v: k + 1 for k, v in gensim_dict.items()}  # 所有频数超过n_exposures的词语的索引
-        w2vec = {word: model[word] for word in w2indx.keys()}  # 所有频数超过n_exposures的词语的词向量
+        w2vec = {word: model.wv[word] for word in w2indx.keys()}  # 所有频数超过n_exposures的词语的词向量
 
         def parse_dataset(combined):
             ''' Words become integers
@@ -160,7 +160,7 @@ def input_transform(string):
     return combined
 
 
-def lstm_predict(string):
+def model_init():
     print('loading model......')
     with open('data/lstm_data/lstm.yml', 'r') as f:
         yaml_string = yaml.load(f)
@@ -170,13 +170,20 @@ def lstm_predict(string):
     model.load_weights('data/lstm_data/lstm.h5')
     model.compile(loss='binary_crossentropy',
                   optimizer='adam', metrics=['accuracy'])
-    data = input_transform(string)
+    return model
+
+
+predict_model = model_init()
+
+
+def lstm_predict(words):
+    data = input_transform(words)
     data.reshape(1, -1)
-    result = model.predict_classes(data)
+    result = predict_model.predict_classes(data)
     if result[0][0] == 1:
-        print(string, 'positive')
+        print("\"", words, "\"", ' 是一句好评')
     else:
-        print(string, ' negative')
+        print("\"", words, "\"", ' 是一句差评')
 
 
 def main():
@@ -187,16 +194,16 @@ def main():
     lstm_predict(string)
     string = '手机质量太差了，傻逼店家，赚黑心钱，以后再也不会买了'
     lstm_predict(string)
-    string = '我是傻逼'
-    lstm_predict(string)
-    string = '你是傻逼'
-    lstm_predict(string)
     string = '屏幕较差，拍照也很粗糙。'
     lstm_predict(string)
     string = '质量不错，是正品 ，安装师傅也很好，才要了83元材料费'
     lstm_predict(string)
     string = '东西非常不错，安装师傅很负责人，装的也很漂亮，精致，谢谢安装师傅！'
     lstm_predict(string)
+
+    while True:
+        a = input('输入语句: ')
+        lstm_predict(a)
 
 
 if __name__ == '__main__':

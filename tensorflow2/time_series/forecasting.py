@@ -210,7 +210,7 @@ def plot(self, model=None, plot_col='T (degC)', max_subplots=3, name=None):
             plt.legend()
 
     plt.xlabel('Time [h]')
-    # plt.show()
+    plt.show()
 
 
 WindowGenerator.plot = plot
@@ -464,6 +464,11 @@ performance['LSTM'] = lstm_model.evaluate(wide_window.test, verbose=0)
 
 wide_window.plot(lstm_model, name="LSTM")
 
+
+
+"""
+性能
+"""
 x = np.arange(len(performance))
 width = 0.3
 metric_name = 'mean_absolute_error'
@@ -481,3 +486,8 @@ plt.show()
 
 for name, value in performance.items():
     print(f'{name:12s}: {value[1]:0.4f}')
+
+
+
+
+

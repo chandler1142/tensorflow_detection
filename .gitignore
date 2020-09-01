@@ -4,5 +4,7 @@ data/
 weights/
 *.weights
 
+__pycache__
+
 tensorflow2/chapter3-retinanet/keras-retinanet
 tensorflow2/chapter3-retinanet/models

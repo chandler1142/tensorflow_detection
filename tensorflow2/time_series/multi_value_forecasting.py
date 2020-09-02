@@ -33,8 +33,8 @@ multi_window = WindowGenerator(input_width=24,
                                label_width=OUT_STEPS,
                                shift=OUT_STEPS, train_df=train_df, test_df=test_df, val_df=val_df)
 
-multi_window.plot()
-print(multi_window)
+# multi_window.plot()
+# print(multi_window)
 
 
 class MultiStepLastBaseline(tf.keras.Model):
@@ -51,7 +51,7 @@ multi_performance = {}
 
 multi_val_performance['Last'] = last_baseline.evaluate(multi_window.val)
 multi_performance['Last'] = last_baseline.evaluate(multi_window.val, verbose=0)
-multi_window.plot(last_baseline)
+# multi_window.plot(last_baseline)
 
 
 class RepeatBaseline(tf.keras.Model):
@@ -65,4 +65,4 @@ repeat_baseline.compile(loss=tf.losses.MeanSquaredError(),
 
 multi_val_performance['Repeat'] = repeat_baseline.evaluate(multi_window.val)
 multi_performance['Repeat'] = repeat_baseline.evaluate(multi_window.test, verbose=0)
-multi_window.plot(repeat_baseline)
+# multi_window.plot(repeat_baseline)

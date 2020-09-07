@@ -341,24 +341,24 @@ def compile_and_fit(model, window, patience=2):
 """
 single
 """
-linear = tf.keras.Sequential([
-    tf.keras.layers.Dense(units=1)
-])
-print('Input shape:', single_step_window.example[0].shape)
-print('Output shape:', linear(single_step_window.example[0]).shape)
-
-history = compile_and_fit(linear, single_step_window)
-
-val_performance['Linear'] = linear.evaluate(single_step_window.val)
-performance['Linear'] = linear.evaluate(single_step_window.test, verbose=0)
-
-wide_window.plot(linear)
-
-plt.bar(x=range(len(train_df.columns)),
-        height=linear.layers[0].kernel[:, 0].numpy())
-axis = plt.gca()
-axis.set_xticks(range(len(train_df.columns)))
-_ = axis.set_xticklabels(train_df.columns, rotation=90)
+# linear = tf.keras.Sequential([
+#     tf.keras.layers.Dense(units=1)
+# ])
+# print('Input shape:', single_step_window.example[0].shape)
+# print('Output shape:', linear(single_step_window.example[0]).shape)
+#
+# history = compile_and_fit(linear, single_step_window)
+#
+# val_performance['Linear'] = linear.evaluate(single_step_window.val)
+# performance['Linear'] = linear.evaluate(single_step_window.test, verbose=0)
+#
+# wide_window.plot(linear)
+#
+# plt.bar(x=range(len(train_df.columns)),
+#         height=linear.layers[0].kernel[:, 0].numpy())
+# axis = plt.gca()
+# axis.set_xticks(range(len(train_df.columns)))
+# _ = axis.set_xticklabels(train_df.columns, rotation=90)
 
 """
 dense
@@ -369,85 +369,86 @@ dense = tf.keras.Sequential([
     tf.keras.layers.Dense(units=1)
 ])
 
-history = compile_and_fit(dense, single_step_window)
-
-val_performance['Dense'] = dense.evaluate(single_step_window.val)
-performance['Dense'] = dense.evaluate(single_step_window.test, verbose=0)
-
-wide_window.plot(dense)
+# history = compile_and_fit(dense, single_step_window)
+#
+# val_performance['Dense'] = dense.evaluate(single_step_window.val)
+# performance['Dense'] = dense.evaluate(single_step_window.test, verbose=0)
+#
+# wide_window.plot(dense)
 
 """
 multi step predict next step
 """
 
 CONV_WIDTH = 3
-
-conv_window = WindowGenerator(
-    input_width=CONV_WIDTH,
-    label_width=1,
-    shift=1,
-    label_columns=['T (degC)'])
-
-print(conv_window)
-
-conv_window.plot()
-plt.title("Given 3h as input, predict 1h into the future.")
-
-multi_step_dense = tf.keras.Sequential([
-    # Shape: (time, features) => (time*features)
-    tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(units=32, activation='relu'),
-    tf.keras.layers.Dense(units=32, activation='relu'),
-    tf.keras.layers.Dense(units=1),
-    # Add back the time dimension.
-    # Shape: (outputs) => (1, outputs)
-    tf.keras.layers.Reshape([1, -1]),
-])
-
-print('Input shape:', conv_window.example[0].shape)
-print('Output shape:', multi_step_dense(conv_window.example[0]).shape)
-
-history = compile_and_fit(multi_step_dense, conv_window)
-val_performance['Multi step dense'] = multi_step_dense.evaluate(conv_window.val)
-performance['Multi step dense'] = multi_step_dense.evaluate(conv_window.test, verbose=0)
-
-print('Input shape:', wide_window.example[0].shape)
-try:
-    print('Output shape:', multi_step_dense(wide_window.example[0]).shape)
-except Exception as e:
-    print(f'\n{type(e).__name__}:{e}')
+#
+# conv_window = WindowGenerator(
+#     input_width=CONV_WIDTH,
+#     label_width=1,
+#     shift=1,
+#     label_columns=['T (degC)'])
+#
+# print(conv_window)
+#
+# conv_window.plot()
+# plt.title("Given 3h as input, predict 1h into the future.")
+#
+# multi_step_dense = tf.keras.Sequential([
+#     # Shape: (time, features) => (time*features)
+#     tf.keras.layers.Flatten(),
+#     tf.keras.layers.Dense(units=32, activation='relu'),
+#     tf.keras.layers.Dense(units=32, activation='relu'),
+#     tf.keras.layers.Dense(units=1),
+#     # Add back the time dimension.
+#     # Shape: (outputs) => (1, outputs)
+#     tf.keras.layers.Reshape([1, -1]),
+# ])
+#
+# print('Input shape:', conv_window.example[0].shape)
+# print('Output shape:', multi_step_dense(conv_window.example[0]).shape)
+#
+# history = compile_and_fit(multi_step_dense, conv_window)
+# val_performance['Multi step dense'] = multi_step_dense.evaluate(conv_window.val)
+# performance['Multi step dense'] = multi_step_dense.evaluate(conv_window.test, verbose=0)
+#
+# print('Input shape:', wide_window.example[0].shape)
+# try:
+#     print('Output shape:', multi_step_dense(wide_window.example[0]).shape)
+# except Exception as e:
+#     print(f'\n{type(e).__name__}:{e}')
 
 """
 CNN
 """
-conv_model = tf.keras.Sequential([
-    tf.keras.layers.Conv1D(filters=32,
-                           kernel_size=(CONV_WIDTH,),
-                           activation='relu'),
-    tf.keras.layers.Dense(units=32, activation='relu'),
-    tf.keras.layers.Dense(units=1),
-])
+# conv_model = tf.keras.Sequential([
+#     tf.keras.layers.Conv1D(filters=32,
+#                            kernel_size=(CONV_WIDTH,),
+#                            activation='relu'),
+#     tf.keras.layers.Dense(units=32, activation='relu'),
+#     tf.keras.layers.Dense(units=1),
+# ])
+#
+# print("Conv model on `conv_window`")
+# print('Input shape:', conv_window.example[0].shape)
+# print('Output shape:', conv_model(conv_window.example[0]).shape)
+#
+# history = compile_and_fit(conv_model, conv_window)
+# val_performance['Conv'] = conv_model.evaluate(conv_window.val)
+# performance['Conv'] = conv_model.evaluate(conv_window.test, verbose=0)
+#
+# LABEL_WIDTH = 24
+# INPUT_WIDTH = LABEL_WIDTH + (CONV_WIDTH - 1)
+# wide_conv_window = WindowGenerator(
+#     input_width=INPUT_WIDTH,
+#     label_width=LABEL_WIDTH,
+#     shift=1,
+#     label_columns=['T (degC)'])
+#
+# print(wide_conv_window)
 
-print("Conv model on `conv_window`")
-print('Input shape:', conv_window.example[0].shape)
-print('Output shape:', conv_model(conv_window.example[0]).shape)
+# wide_conv_window.plot(conv_model)
 
-history = compile_and_fit(conv_model, conv_window)
-val_performance['Conv'] = conv_model.evaluate(conv_window.val)
-performance['Conv'] = conv_model.evaluate(conv_window.test, verbose=0)
-
-LABEL_WIDTH = 24
-INPUT_WIDTH = LABEL_WIDTH + (CONV_WIDTH - 1)
-wide_conv_window = WindowGenerator(
-    input_width=INPUT_WIDTH,
-    label_width=LABEL_WIDTH,
-    shift=1,
-    label_columns=['T (degC)'])
-
-print(wide_conv_window)
-
-wide_conv_window.plot(conv_model)
-
+print("=============================================LSTM==============================================================")
 lstm_model = tf.keras.models.Sequential([
     # Shape [batch, time, features] => [batch, time, lstm_units]
     tf.keras.layers.LSTM(32, return_sequences=True),
@@ -456,7 +457,7 @@ lstm_model = tf.keras.models.Sequential([
 ])
 
 print('Input shape:', wide_window.example[0].shape)
-print('Output shape:', lstm_model(wide_window.example[0]).shape)
+# print('Output shape:', lstm_model(wide_window.example[0]).shape)
 
 history = compile_and_fit(lstm_model, wide_window)
 val_performance['LSTM'] = lstm_model.evaluate(wide_window.val)
@@ -469,23 +470,23 @@ wide_window.plot(lstm_model, name="LSTM")
 """
 性能
 """
-x = np.arange(len(performance))
-width = 0.3
-metric_name = 'mean_absolute_error'
-metric_index = lstm_model.metrics_names.index('mean_absolute_error')
-val_mae = [v[metric_index] for v in val_performance.values()]
-test_mae = [v[metric_index] for v in performance.values()]
-
-plt.ylabel('mean_absolute_error [T (degC), normalized]')
-plt.bar(x - 0.17, val_mae, width, label='Validation')
-plt.bar(x + 0.17, test_mae, width, label='Test')
-plt.xticks(ticks=x, labels=performance.keys(),
-           rotation=45)
-_ = plt.legend()
-plt.show()
-
-for name, value in performance.items():
-    print(f'{name:12s}: {value[1]:0.4f}')
+# x = np.arange(len(performance))
+# width = 0.3
+# metric_name = 'mean_absolute_error'
+# metric_index = lstm_model.metrics_names.index('mean_absolute_error')
+# val_mae = [v[metric_index] for v in val_performance.values()]
+# test_mae = [v[metric_index] for v in performance.values()]
+#
+# plt.ylabel('mean_absolute_error [T (degC), normalized]')
+# plt.bar(x - 0.17, val_mae, width, label='Validation')
+# plt.bar(x + 0.17, test_mae, width, label='Test')
+# plt.xticks(ticks=x, labels=performance.keys(),
+#            rotation=45)
+# _ = plt.legend()
+# plt.show()
+#
+# for name, value in performance.items():
+#     print(f'{name:12s}: {value[1]:0.4f}')
 
 
 
